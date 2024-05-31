@@ -4,68 +4,69 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
-   // Public variables
-   public float speed;
-   public bool vertical;
-   public float changeTime = 3.0f;
-   public LayerMask unwalkableMask;
+    // Public variables
+    public float speed = 15f;
+    public float detectionDistance = 80f; // La distance à laquelle l'ennemi détectera le joueur
+    public LayerMask unwalkableMask;
 
-   // Private variables
-   Rigidbody2D rigidbody2d;
-   float timer;
-   int direction = 1;
+    // Private variables
+    private Rigidbody2D rigidbody2d;
+    private GridA grid;
 
-   // Reference to GridA
-   GridA grid;
+    // Reference to the player
+    private GameObject player;
+    private Vector2 targetPosition;
 
-   // Start is called before the first frame update
-   void Start()
-   {
-       rigidbody2d = GetComponent<Rigidbody2D>();
-       grid = FindObjectOfType<GridA>();
-       timer = changeTime;
-   }
+    public Transform target;
+    public Player PlayerMovement;
+    
+    public float damage = 10f;
 
-   // Update is called every frame
-   void Update()
-   {
-       timer -= Time.deltaTime;
+    // Start is called before the first frame update
+    void Start()
+    {
+        rigidbody2d = GetComponent<Rigidbody2D>();
+        grid = FindObjectOfType<GridA>();
 
-       if (timer < 0)
-       {
-           direction = -direction;
-           timer = changeTime;
-       }
-   }
+        // Find the player object by tag
+        player = GameObject.FindGameObjectWithTag("Player");
+    }
 
-   // FixedUpdate has the same call rate as the physics system
-   void FixedUpdate()
-   {
-       Vector2 position = rigidbody2d.position;
+    // FixedUpdate has the same call rate as the physics system
+    void FixedUpdate()
+    {
+        // If the player exists and is within detectionDistance, calculate the direction towards the player
+        if (player != null && Vector2.Distance(transform.position, player.transform.position) <= detectionDistance)
+        {
+            // Calculate direction towards the player
+            Vector2 direction = (player.transform.position - transform.position).normalized;
 
-       if (vertical)
-       {
-           position.y = position.y + speed * direction * Time.deltaTime;
-       }
-       else
-       {
-           position.x = position.x + speed * direction * Time.deltaTime;
-       }
+            // Move towards the player
+            rigidbody2d.MovePosition(rigidbody2d.position + direction * speed * Time.fixedDeltaTime);
+        }
+    }
 
-       // Check if the new position is in a non-walkable area
-       if (IsPositionWalkable(position))
-       {
-           rigidbody2d.MovePosition(position);
-       }
-       else
-       {
-           direction = -direction; // Reverse direction if the new position is not walkable
-       }
-   }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            // Assure-toi que PlayerMovement est bien assigné dans l'inspecteur de Unity
+            if (PlayerMovement != null)
+            {
+                PlayerMovement.health -= damage;
+            }
+            else
+            {
+                Debug.LogWarning("PlayerMovement n'est pas assigné dans l'inspecteur.");
+            }
 
-   bool IsPositionWalkable(Vector2 position)
-   {
-       Collider2D hitCollider = Physics2D.OverlapCircle(position, grid.nodeRadius, unwalkableMask);
-       return hitCollider == null;
-   }
+            // Tu peux ajouter ici des effets de collision supplémentaires si nécessaire
+            target = null;
+        }
+        else if (collision.gameObject.CompareTag("Bullet"))
+        {
+            Destroy(collision.gameObject);
+            Destroy(gameObject);
+        }
+    }
 }

@@ -8,7 +8,7 @@ public class GridA : MonoBehaviour
     public Vector2 gridWorldSize;
     public float nodeRadius;
     Node[,] grid;
-
+    static private List<Vector3> gridPos;
     float nodeDiameter;
     int gridSizeX, gridSizeY;
 
@@ -72,18 +72,23 @@ public class GridA : MonoBehaviour
 }
 
     public List<Node> path;
-    void OnDrawGizmos(){
-        Vector3 cubeCenter = transform.position + new Vector3(gridWorldSize.x / 2, gridWorldSize.y / 2, 0);
-        Gizmos.DrawWireCube(cubeCenter, new Vector3(gridWorldSize.x, gridWorldSize.y, 1));
-
-        if (grid != null){ 
-            foreach (Node n in grid){
-                Gizmos.color = (n.walkable)?Color.white:Color.red;
-                if (path != null)
-                    if(path.Contains(n))
-                        Gizmos.color = Color.green;
-                Gizmos.DrawCube((Vector3)n.worldPosition, Vector3.one * (nodeDiameter-.1f));
+    void OnDrawGizmos()
+    {
+        if (path != null)
+        {
+            foreach (Node n in path)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawCube((Vector3)n.worldPosition, Vector3.one * (nodeDiameter - .1f));
             }
         }
+
+
     }
+    public Vector3 WorldPointFromNode(Node node)
+    {
+        return node.worldPosition;
+    }
+
+    
 }

@@ -22,56 +22,71 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     private CoinFactory CoinFactory;
     [SerializeField]
     private Transform coinsParent;
+    [SerializeField]
+    private GameObject player;
+    [SerializeField]
+    private GameObject boss;
+    [SerializeField]
+    private GameObject doorPrefab;
 
     private List<GameObject> enemyInstances = new List<GameObject>();
     private List<GameObject> coinInstances = new List<GameObject>();
 
-    protected override void RunProceduralGeneration()
-    {
-        List<BoundsInt> rooms = CreateRooms();
-        GenerateEnemiesInRooms(rooms);
-        GenerateCoinsInRooms(rooms);
-    }
+   protected override void RunProceduralGeneration()
+{
+    List<BoundsInt> rooms = CreateRooms(out HashSet<Vector2Int> corridors);
+    GenerateEnemiesInRooms(rooms);
+    GenerateCoinsInRooms(rooms);
+    PositionPlayerInRoom(rooms);
+    PositionBossInRoom(rooms);
+    GenerateDoorNearBossRoom(rooms, corridors);
+}
 
-    private List<BoundsInt> CreateRooms()
+    private List<BoundsInt> CreateRooms(out HashSet<Vector2Int> corridors)
+{
+    var roomsList = ProceduralGenerationAlgorithms.BinarySpacePartitioning(new BoundsInt((Vector3Int)startPosition, new Vector3Int(dungeonWidth, dungeonHeight, 0)), minRoomWidth, minRoomHeight);
+    HashSet<Vector2Int> floor = new HashSet<Vector2Int>();
+    floor = CreateSimpleRooms(roomsList);
+    List<Vector2Int> roomCenters = new List<Vector2Int>();
+    foreach (var room in roomsList)
     {
-        var roomsList = ProceduralGenerationAlgorithms.BinarySpacePartitioning(new BoundsInt((Vector3Int)startPosition, new Vector3Int(dungeonWidth, dungeonHeight, 0)), minRoomWidth, minRoomHeight);
-        HashSet<Vector2Int> floor = new HashSet<Vector2Int>();
-        floor = CreateSimpleRooms(roomsList);
-        List<Vector2Int> roomCenters = new List<Vector2Int>();
-        foreach (var room in roomsList)
-        {
-            roomCenters.Add((Vector2Int)Vector3Int.RoundToInt(room.center));
-        }
-        HashSet<Vector2Int> corridors = ConnectRooms(roomCenters);
-        floor.UnionWith(corridors);
-        tilemapVisualizer.PaintFloorTiles(floor);
-        WallGenerator.CreateWalls(floor, tilemapVisualizer);
-        return roomsList;
+        roomCenters.Add((Vector2Int)Vector3Int.RoundToInt(room.center));
     }
+    corridors = ConnectRooms(roomCenters);
+    corridors = IncreaseCorridorSize(corridors);
+    floor.UnionWith(corridors);
+    tilemapVisualizer.PaintFloorTiles(floor);
+    WallGenerator.CreateWalls(floor, tilemapVisualizer);
+    return roomsList;
+}
 
     private HashSet<Vector2Int> ConnectRooms(List<Vector2Int> roomCenters)
     {
         HashSet<Vector2Int> corridors = new HashSet<Vector2Int>();
-        var currentRoomCenter = roomCenters[Random.Range(0, roomCenters.Count)];
-        roomCenters.Remove(currentRoomCenter);
-        while (roomCenters.Count > 0)
+
+        for (int i = 0; i < roomCenters.Count; i++)
         {
-            Vector2Int closest = FindClosestPointTo(currentRoomCenter, roomCenters);
-            roomCenters.Remove(closest);
-            HashSet<Vector2Int> newCorrider = CreateCorridor(currentRoomCenter, closest);
-            currentRoomCenter = closest;
-            corridors.UnionWith(newCorrider);
+            var currentRoom = roomCenters[i];
+            Vector2Int closestRoom1 = FindClosestPointTo(currentRoom, roomCenters, new List<Vector2Int> { currentRoom });
+            Vector2Int closestRoom2 = FindClosestPointTo(currentRoom, roomCenters, new List<Vector2Int> { currentRoom, closestRoom1 });
+
+            HashSet<Vector2Int> newCorridor1 = CreateCorridor(currentRoom, closestRoom1);
+            HashSet<Vector2Int> newCorridor2 = CreateCorridor(currentRoom, closestRoom2);
+
+            corridors.UnionWith(newCorridor1);
+            corridors.UnionWith(newCorridor2);
         }
+
         return corridors;
     }
 
-    private Vector2Int FindClosestPointTo(Vector2Int currentRoomCenter, List<Vector2Int> roomCenters)
+    private Vector2Int FindClosestPointTo(Vector2Int currentRoomCenter, List<Vector2Int> roomCenters, List<Vector2Int> exclude)
     {
         Vector2Int closest = Vector2Int.zero;
         float distance = float.MaxValue;
         foreach (var position in roomCenters)
         {
+            if (exclude.Contains(position)) continue;
             float currentDistance = Vector2.Distance(position, currentRoomCenter);
             if (currentDistance < distance)
             {
@@ -87,6 +102,7 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
         HashSet<Vector2Int> corridor = new HashSet<Vector2Int>();
         var position = currentRoomCenter;
         corridor.Add(position);
+
         while (position.y != destination.y)
         {
             if (destination.y > position.y)
@@ -155,7 +171,7 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
             enemyInstances.Add(newEnemy);
         }
     }
-/********************************************************/
+
     private void GenerateCoinsInRooms(List<BoundsInt> rooms)
     {
         foreach (var coinInstance in coinInstances)
@@ -180,4 +196,79 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
             coinInstances.Add(newCoin);
         }
     }
+
+    private HashSet<Vector2Int> IncreaseCorridorSize(HashSet<Vector2Int> corridors)
+    {
+        HashSet<Vector2Int> enlargedCorridors = new HashSet<Vector2Int>();
+        foreach (var corridorTile in corridors)
+        {
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    enlargedCorridors.Add(corridorTile + new Vector2Int(x, y));
+                }
+            }
+        }
+        return enlargedCorridors;
+    }
+
+    private void PositionPlayerInRoom(List<BoundsInt> rooms)
+    {
+        if (rooms.Count > 0)
+        {
+            BoundsInt startingRoom = rooms[0];
+            Vector3 playerStartPos = new Vector3(startingRoom.center.x, startingRoom.center.y, 0);
+            player.transform.position = playerStartPos;
+        }
+    }
+
+    private void PositionBossInRoom(List<BoundsInt> rooms)
+    {
+        if (rooms.Count > 0)
+        {
+            BoundsInt bossRoom = rooms[rooms.Count - 1];
+            Vector3 bossPos = new Vector3(bossRoom.center.x, bossRoom.center.y, 0);
+            boss.transform.position = bossPos;
+        }
+    }
+
+    
+private void GenerateDoorNearBossRoom(List<BoundsInt> rooms, HashSet<Vector2Int> corridors)
+{
+    if (rooms.Count > 0)
+    {
+        BoundsInt bossRoom = rooms[rooms.Count - 1];
+        Vector2Int doorPosition = FindClosestCorridorToRoom(bossRoom, corridors);
+        Instantiate(doorPrefab, new Vector3(doorPosition.x, doorPosition.y, 0), Quaternion.identity);
+    }
+}
+  
+  
+  private Vector2Int FindClosestCorridorToRoom(BoundsInt room, HashSet<Vector2Int> corridors)
+{
+    Vector2Int closestCorridor = Vector2Int.zero;
+    float minDistance = float.MaxValue;
+
+    foreach (var corridor in corridors)
+    {
+        // Vérifiez si le corridor est adjacent à la salle du boss
+        if (IsCorridorAdjacentToRoom(room, corridor))
+        {
+            float distance = Vector2.Distance(corridor, (Vector2)room.center);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestCorridor = corridor;
+            }
+        }
+    }
+    return closestCorridor;
+}
+private bool IsCorridorAdjacentToRoom(BoundsInt room, Vector2Int corridor)
+{
+    // Vérifiez si le corridor est à côté de la salle (en haut, en bas, à gauche, à droite)
+    return (corridor.x == room.xMin - 1 || corridor.x == room.xMax + 1) && (corridor.y >= room.yMin && corridor.y <= room.yMax) ||
+           (corridor.y == room.yMin - 1 || corridor.y == room.yMax + 1) && (corridor.x >= room.xMin && corridor.x <= room.xMax);
+}
 }

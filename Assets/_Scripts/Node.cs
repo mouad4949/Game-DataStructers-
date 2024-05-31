@@ -8,6 +8,7 @@ public class Node
     public Vector3 worldPosition;
     public int gridX;
     public int gridY;
+    public bool containsCoin;
 
     public int gCost;
     public int hCost;
@@ -18,6 +19,7 @@ public class Node
         worldPosition = _worldPos;
         gridX = _gridX;
         gridY = _gridY;
+        containsCoin = false; // Par défaut, aucun nœud ne contient de pièce
     }
 
     public int fCost {
