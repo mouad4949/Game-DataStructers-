@@ -28,19 +28,24 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     private GameObject boss;
     [SerializeField]
     private GameObject doorPrefab;
+    [SerializeField]
+    public Transform DoorParent;
 
     private List<GameObject> enemyInstances = new List<GameObject>();
     private List<GameObject> coinInstances = new List<GameObject>();
+    private List<GameObject> doorInstances = new List<GameObject>();
 
-   protected override void RunProceduralGeneration()
+
+  protected override void RunProceduralGeneration()
 {
     List<BoundsInt> rooms = CreateRooms(out HashSet<Vector2Int> corridors);
     GenerateEnemiesInRooms(rooms);
     GenerateCoinsInRooms(rooms);
     PositionPlayerInRoom(rooms);
     PositionBossInRoom(rooms);
-    GenerateDoorNearBossRoom(rooms, corridors);
+    GenerateDoorsInBossCorridors(rooms, corridors);
 }
+
 
     private List<BoundsInt> CreateRooms(out HashSet<Vector2Int> corridors)
 {
@@ -59,6 +64,7 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     WallGenerator.CreateWalls(floor, tilemapVisualizer);
     return roomsList;
 }
+
 
     private HashSet<Vector2Int> ConnectRooms(List<Vector2Int> roomCenters)
     {
@@ -186,16 +192,23 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
         }
     }
 
-    private void GenerateCoinInRoom(BoundsInt roomBounds)
+   private void GenerateCoinInRoom(BoundsInt roomBounds)
+{
+    int numberOfCoins = Random.Range(1, 20);
+    for (int i = 0; i < numberOfCoins; i++)
     {
-        int numberOfCoins = Random.Range(1, 20);
-        for (int i = 0; i < numberOfCoins; i++)
+        Vector3 randomPosition = new Vector3(Random.Range(roomBounds.min.x + 5, roomBounds.max.x - 5), Random.Range(roomBounds.min.y + 5, roomBounds.max.y - 5), 0);
+        GameObject newCoin = CoinFactory.CreateCoin(randomPosition, coinsParent);
+        coinInstances.Add(newCoin);
+
+        // Ajouter la pièce à la liste du CoinManager
+        CoinManager cm = FindObjectOfType<CoinManager>();
+        if (cm != null)
         {
-            Vector3 randomPosition = new Vector3(Random.Range(roomBounds.min.x + 5, roomBounds.max.x - 5), Random.Range(roomBounds.min.y + 5, roomBounds.max.y - 5), 0);
-            GameObject newCoin = CoinFactory.CreateCoin(randomPosition, coinsParent);
-            coinInstances.Add(newCoin);
-        }
-    }
+            cm.coins.Add(newCoin);
+        }
+    }
+}
 
     private HashSet<Vector2Int> IncreaseCorridorSize(HashSet<Vector2Int> corridors)
     {
@@ -234,41 +247,59 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     }
 
     
-private void GenerateDoorNearBossRoom(List<BoundsInt> rooms, HashSet<Vector2Int> corridors)
+private void GenerateDoorsInBossCorridors(List<BoundsInt> rooms, HashSet<Vector2Int> corridors)
 {
+    // Détruire les anciennes portes
+    DestroyOldDoors();
+
+    // Générer les nouvelles portes
     if (rooms.Count > 0)
     {
         BoundsInt bossRoom = rooms[rooms.Count - 1];
-        Vector2Int doorPosition = FindClosestCorridorToRoom(bossRoom, corridors);
-        Instantiate(doorPrefab, new Vector3(doorPosition.x, doorPosition.y, 0), Quaternion.identity);
+        List<Vector2Int> doorPositions = FindAllCorridorsAdjacentToRoom(bossRoom, corridors);
+        foreach (var doorPosition in doorPositions)
+        {
+            GameObject newDoor = Instantiate(doorPrefab, new Vector3(doorPosition.x, doorPosition.y, 0), Quaternion.identity,DoorParent);
+            newDoor.tag = "Door"; // Assigner le tag "Door" aux nouvelles portes
+            doorInstances.Add(newDoor);
+        }
     }
 }
+
+
   
   
-  private Vector2Int FindClosestCorridorToRoom(BoundsInt room, HashSet<Vector2Int> corridors)
+  private List<Vector2Int> FindAllCorridorsAdjacentToRoom(BoundsInt room, HashSet<Vector2Int> corridors)
 {
-    Vector2Int closestCorridor = Vector2Int.zero;
-    float minDistance = float.MaxValue;
+    List<Vector2Int> adjacentCorridors = new List<Vector2Int>();
 
     foreach (var corridor in corridors)
     {
-        // Vérifiez si le corridor est adjacent à la salle du boss
         if (IsCorridorAdjacentToRoom(room, corridor))
         {
-            float distance = Vector2.Distance(corridor, (Vector2)room.center);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closestCorridor = corridor;
-            }
+            adjacentCorridors.Add(corridor);
         }
     }
-    return closestCorridor;
+
+    return adjacentCorridors;
 }
+
 private bool IsCorridorAdjacentToRoom(BoundsInt room, Vector2Int corridor)
 {
-    // Vérifiez si le corridor est à côté de la salle (en haut, en bas, à gauche, à droite)
     return (corridor.x == room.xMin - 1 || corridor.x == room.xMax + 1) && (corridor.y >= room.yMin && corridor.y <= room.yMax) ||
            (corridor.y == room.yMin - 1 || corridor.y == room.yMax + 1) && (corridor.x >= room.xMin && corridor.x <= room.xMax);
 }
+private void DestroyOldDoors()
+{
+    foreach (var doorInstance in doorInstances)
+    {
+        if (doorInstance != null)
+        {
+            DestroyImmediate(doorInstance);
+        }
+    }
+    doorInstances.Clear();
+}
+
+
 }

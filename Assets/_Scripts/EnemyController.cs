@@ -21,6 +21,7 @@ public class EnemyController : MonoBehaviour
     public Player PlayerMovement;
     
     public float damage = 10f;
+    public CoinManager coinManager;
 
     // Start is called before the first frame update
     void Start()
@@ -64,9 +65,14 @@ public class EnemyController : MonoBehaviour
             target = null;
         }
         else if (collision.gameObject.CompareTag("Bullet"))
-        {
+        {   // Augmenter enemiesKilled dans le CoinManager lorsque cet ennemi est détruit
+            if (coinManager != null)
+            {
+                coinManager.enemiesKilled++;
+            }
             Destroy(collision.gameObject);
             Destroy(gameObject);
         }
+        
     }
 }
