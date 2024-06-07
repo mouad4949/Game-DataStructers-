@@ -13,7 +13,10 @@ public class Player : MonoBehaviour
     public float maxHealth;
     public Image healthBar;
     public float speed = 5f;
-    public float coinDetectionRadius = 5f; // Distance de détection des pièces
+    public float coinDetectionRadius = 5f; 
+    public GameManagerScript gameManager;
+    public bool isDead;
+    // Distance de détection des pièces
 
     Vector2 movementInput;
     Dictionary<GameObject, Vector3> nearbyCoinsDict = new Dictionary<GameObject, Vector3>();
@@ -32,6 +35,16 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space)) // Détection de la touche "Entrée"
         {
             CollectNearbyCoins();
+        }
+        OverGame();
+    }
+
+    public void OverGame()
+    {   
+        if(health<=0 && !isDead)
+        {   
+            isDead = true;
+            gameManager.gameOver();
         }
     }
 

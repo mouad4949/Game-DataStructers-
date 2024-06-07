@@ -72,19 +72,23 @@ public class GridA : MonoBehaviour
 }
 
     public List<Node> path;
+
     void OnDrawGizmos()
     {
-        if (path != null)
+        Gizmos.DrawWireCube(transform.position + Vector3.right * gridWorldSize.x / 2 + Vector3.up * gridWorldSize.y / 2, new Vector3(gridWorldSize.x, gridWorldSize.y, 1));
+
+        if (grid != null)
         {
-            foreach (Node n in path)
+            foreach (Node n in grid)
             {
-                Gizmos.color = Color.green;
-                Gizmos.DrawCube((Vector3)n.worldPosition, Vector3.one * (nodeDiameter - .1f));
+                Gizmos.color = (n.walkable) ? Color.white : Color.red;
+                if (path != null)
+                    if (path.Contains(n))
+                        Gizmos.color = Color.black;
+                Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
             }
-        }
-
-
-    }
+        }
+    }
     public Vector3 WorldPointFromNode(Node node)
     {
         return node.worldPosition;

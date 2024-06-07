@@ -14,12 +14,19 @@ public class CoinManager : MonoBehaviour
 
     void Start()
     {
+        Initialize();
+    }
+    public void Initialize()
+    {
         doors = new List<GameObject>(GameObject.FindGameObjectsWithTag("Door"));
         coins = new List<GameObject>(GameObject.FindGameObjectsWithTag("Coins")); // Référencer toutes les pièces avec le tag "Coins"
+        coinCount = 0;
+        enemiesKilled = 0;
+        UpdateCoinText();
         Debug.Log("Initial number of coins: " + coins.Count);
     }
 
-    void Update()
+    public void Update()
     {
         coinText.text = "Coins: " + coinCount.ToString();
         if (coinCount >= coinsToDestroyDoors && enemiesKilled >= enemiesToDestroyDoors)
@@ -28,6 +35,11 @@ public class CoinManager : MonoBehaviour
         }
     }
 
+    private void UpdateCoinText()
+    {
+        coinText.text = "Coins: " + coinCount.ToString();
+    }
+    
     public List<GameObject> FindCoinsInRadius(Vector3 playerPosition, float radius)
     {
         List<GameObject> nearbyCoins = new List<GameObject>();

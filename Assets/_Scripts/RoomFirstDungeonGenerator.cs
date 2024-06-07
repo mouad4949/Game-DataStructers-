@@ -30,6 +30,9 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     private GameObject doorPrefab;
     [SerializeField]
     public Transform DoorParent;
+    public Player PlayerMovement;
+    public CoinManager cm;
+    
 
     private List<GameObject> enemyInstances = new List<GameObject>();
     private List<GameObject> coinInstances = new List<GameObject>();
@@ -301,5 +304,53 @@ private void DestroyOldDoors()
     doorInstances.Clear();
 }
 
+   public void ReplayDungeon()
+{   
+    PlayerMovement.health = 100;
 
+    // Reset CoinManager stats
+    cm.coinCount = 0;
+    cm.enemiesKilled = 0; 
+    cm.Update(); // Update CoinManager UI
+
+    // Destroy all current enemies and coins
+    DestroyAllEnemiesAndCoins();
+
+    // Destroy other elements like doors
+    foreach (var door in doorInstances)
+    {
+        if (door != null)
+        {
+            DestroyImmediate(door);
+        }
+    }
+    doorInstances.Clear();
+
+    // Re-generate the dungeon
+    tilemapVisualizer.Clear();
+    RunProceduralGeneration();
+}
+
+public void DestroyAllEnemiesAndCoins()
+{
+    foreach (var enemy in enemyInstances)
+    {
+        if (enemy != null)
+        {
+            Destroy(enemy);
+        }
+    }
+    enemyInstances.Clear();
+
+    foreach (var coin in coinInstances)
+    {
+        if (coin != null)
+        {
+            Destroy(coin);
+        }
+    }
+    coinInstances.Clear();
+
+    Debug.Log("All enemies and coins have been destroyed.");
+}
 }
