@@ -10,8 +10,9 @@ public class Dialogue : MonoBehaviour
     private int index;
     // Start is called before the first frame update
     void Start()
-    {
+    {   Time.timeScale = 0.0f;
         textComponent.text=string.Empty;
+        
         StartDialogue();
     }
 

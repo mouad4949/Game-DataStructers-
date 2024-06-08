@@ -6,15 +6,18 @@ public class CoinManager : MonoBehaviour
 {
     public int coinCount;
     public Text coinText;
+     public Text enemyText;
     public int coinsToDestroyDoors = 10; // Nombre de pièces nécessaires pour détruire les portes
     public int enemiesKilled;
     public int enemiesToDestroyDoors = 5; // Nombre d'ennemis à tuer pour détruire les portes
     private List<GameObject> doors; // Liste des portes à détruire
     public List<GameObject> coins;
+    private GameManagerScript gameManager;
 
     void Start()
     {
         Initialize();
+        gameManager = FindObjectOfType<GameManagerScript>();
     }
     public void Initialize()
     {
@@ -29,6 +32,7 @@ public class CoinManager : MonoBehaviour
     public void Update()
     {
         coinText.text = "Coins: " + coinCount.ToString();
+        enemyText.text = "Enemy: " + enemiesKilled.ToString();
         if (coinCount >= coinsToDestroyDoors && enemiesKilled >= enemiesToDestroyDoors)
         {
             DestroyDoors();
@@ -38,6 +42,11 @@ public class CoinManager : MonoBehaviour
     private void UpdateCoinText()
     {
         coinText.text = "Coins: " + coinCount.ToString();
+    }
+
+    private void UpdateEnemyText()
+    {
+        enemyText.text = "Enemy: " + enemiesKilled.ToString();
     }
     
     public List<GameObject> FindCoinsInRadius(Vector3 playerPosition, float radius)
@@ -79,6 +88,7 @@ public class CoinManager : MonoBehaviour
                 Destroy(door);
             }
         }
-        doors.Clear(); // Vider la liste après destruction
+        doors.Clear();
+        gameManager.CheckAndActivatePathfinding(); 
     }
 }

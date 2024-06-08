@@ -32,6 +32,7 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     public Transform DoorParent;
     public Player PlayerMovement;
     public CoinManager cm;
+    public GridA grida;
     
 
     private List<GameObject> enemyInstances = new List<GameObject>();
@@ -47,6 +48,8 @@ public class RoomFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     PositionPlayerInRoom(rooms);
     PositionBossInRoom(rooms);
     GenerateDoorsInBossCorridors(rooms, corridors);
+    grida.traceGrid();
+
 }
 
 

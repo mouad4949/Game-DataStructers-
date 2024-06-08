@@ -20,9 +20,11 @@ public class GridA : MonoBehaviour
 //     gridWorldSize.y=room.dungeonHeight;
 //   }
         
-    
-    
     void Start(){
+        traceGrid();
+    }
+    
+     public void traceGrid(){
         nodeDiameter = nodeRadius*2;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x/nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y/nodeDiameter);

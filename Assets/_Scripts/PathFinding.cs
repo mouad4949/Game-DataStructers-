@@ -8,15 +8,18 @@ public class Pathfinding : MonoBehaviour
     public Transform seeker, target;
     GridA grid;
     private FollowPathAstar pathFollower;
+    
     void Awake() {
         grid = GetComponent<GridA>();
         pathFollower = seeker.GetComponent<FollowPathAstar>(); 
     }
 
     void Update()
+    
     {
        FindAndFollowPath(seeker.position, target.position);
     }
+
     public void FindAndFollowPath(Vector2 startPos, Vector2 targetPos)
     {
         if (startPos == null || targetPos == null)
@@ -28,6 +31,7 @@ public class Pathfinding : MonoBehaviour
         List<Node> path = FindPath(startPos, targetPos);
         pathFollower.StartPath(path);  // Démarrer le suivi du chemin
     }
+
    public List<Node> FindPath(Vector2 startPos, Vector2 targetPos)
     {
         Node startNode = grid.NodeFromWorldPoint(startPos);
@@ -107,6 +111,11 @@ public class Pathfinding : MonoBehaviour
         return 14 * dstX + 10 * (dstY - dstX);
     }
 
+    public void ResetPathfinding()
+    {
+        pathFollower.StopAllCoroutines();
+        pathFollower.StartPath(null);  // Clear the current path
+    }
 
     
 }

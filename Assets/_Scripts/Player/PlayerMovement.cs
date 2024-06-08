@@ -44,6 +44,7 @@ public class Player : MonoBehaviour
         if(health<=0 && !isDead)
         {   
             isDead = true;
+            Time.timeScale = 0.0f;
             gameManager.gameOver();
         }
     }
@@ -53,7 +54,7 @@ public class Player : MonoBehaviour
         MovePlayer();
     }
 
-    private void HandleMovement()
+    public void HandleMovement()
     {
         float mx = Input.GetAxisRaw("Horizontal");
         float my = Input.GetAxisRaw("Vertical");

@@ -21,6 +21,7 @@ public class BossController : MonoBehaviour
     public int healthBoss=200;
     
     public float damage = 25f;
+     public GameManagerScript gameManager;
    
 
     // Start is called before the first frame update
@@ -67,8 +68,8 @@ public class BossController : MonoBehaviour
             healthBoss-=10;
             Destroy(collision.gameObject);
             if(healthBoss<=0){
-            Destroy(collision.gameObject);
-            Destroy(gameObject);
+             gameObject.SetActive(false);
+             gameManager.Won();
         }
         
     }
